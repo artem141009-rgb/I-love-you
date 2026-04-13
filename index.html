@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Для Даши</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000; /* Глубокий чёрный фон */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+
+        /* КАНВАС ДЛЯ ЯРКОЙ МАТРИЦЫ */
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Фон */
+        }
+
+        /* КОНТЕЙНЕР КОНВЕРТА */
+        .envelope-wrapper {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            z-index: 10; /* Поверх фона */
+            cursor: pointer;
+            perspective: 1000px; /* Для 3D эффекта крышки */
+        }
+
+        /* ЗАДНЯЯ ЧАСТЬ КОНВЕРТА */
+        .envelope {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 10px 50px rgba(255, 105, 180, 0.4); /* Яркое розовое свечение */
+        }
+
+        /* КРЫШКА */
+        .flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-top: 110px solid #f0f0f0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            z-index: 5;
+            transform-origin: top;
+            transition: transform 0.6s ease;
+        }
+
+        /* ПИСЬМО (ВНУТРИ) */
+        .letter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 280px;
+            height: 180px;
+            background: #fff;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.8s ease-in-out;
+            border-radius: 5px;
+        }
+
+        .letter h1 {
+            color: #ff0040; /* Ярко-красный текст */
+            font-size: 24px;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        /* ПЕРЕДНЯЯ ПАНЕЛЬ (КАРМАН) */
+        .pocket {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-top: 100px solid transparent;
+            border-left: 150px solid #fff;
+            border-right: 150px solid #fff;
+            border-bottom: 100px solid #fff;
+            z-index: 4;
+            border-radius: 0 0 10px 10px;
+        }
+
+        /* ШТАМП */
+        .stamp {
+            position: absolute;
+            top: 75px;
+            left: 125px;
+            width: 50px;
+            height: 50px;
+            background: #ff0040;
+            border-radius: 50%;
+            z-index: 6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 25px;
+            border: 3px solid #fff;
+            transition: 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.5);
+        }
+
+        /* СОСТОЯНИЕ ОТКРЫТИЯ */
+        .open .flap {
+            transform: rotateX(180deg);
+            z-index: 1; /* Уходит назад */
+        }
+
+        .open .letter {
+            transform: translateY(-130px);
+            z-index: 11; /* Выезжает вперед */
+        }
+
+        .open .stamp {
+            opacity: 0;
+            transform: scale(0);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix"></canvas>
+
+    <div class="envelope-wrapper" id="env" onclick="this.classList.add('open')">
+        <div class="flap"></div>
+        <div class="envelope">
+            <div class="letter">
+                <h1>Даша,<br>ты лучшая! 💗</h1>
+            </div>
+            <div class="pocket"></div>
+            <div class="stamp">💗</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        // Установка размера холста на весь экран
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Те самые стикеры
+        const sticker = "💗";
+        const fontSize = 20;
+        const columns = Math.floor(canvas.width / fontSize);
+        const drops = Array(columns).fill(1);
+
+        // Цвета для матрицы
+        const primaryColor = "#ff69b4"; // Ярко-розовый
+        const glowColor = "#ffffff";    // Белый (для эффекта свечения первой капли)
+
+        function draw() {
+            // Очистка экрана. Делаем черный фон непрозрачным,
+            // но рисуем поверх него полупрозрачные хвосты.
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; // Этот параметр создает "шлейф"
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = fontSize + "px serif";
+            
+            for (let i = 0; i < drops.length; i++) {
+                // Эффект "головы" Матрицы: первая капля светится белым
+                if (drops[i] === 0) {
+                     ctx.fillStyle = glowColor;
+                } else {
+                     ctx.fillStyle = primaryColor; // Остальные - ярко-розовые
+                }
+
+                ctx.fillText(sticker, i * fontSize, drops[i] * fontSize);
+
+                // Если стикер дошел до конца экрана, кидаем его наверх с шансом
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.98) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        // Запуск анимации
+        setInterval(draw, 50);
+
+        // Адаптация при изменении размера окна
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Пересчитываем колонки
+            const newColumns = Math.floor(canvas.width / fontSize);
+            drops.length = 0;
+            drops.length = newColumns;
+            drops.fill(1);
+        });
+    </script>
+</body>
+</html>
